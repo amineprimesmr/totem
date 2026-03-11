@@ -48,6 +48,14 @@ git push -u origin main
 - `TWILIO_STATUS_CALLBACK_URL=https://<api-domain>/api/messages/webhooks/twilio/status`
 - `MAPBOX_TOKEN`
 
+## Vercel (WEB) — IMPORTANT : Root Directory
+Le projet est un **monorepo** (app Next dans `apps/web`). Pour que le build passe :
+1. Vercel > ton projet **totem** > **Settings** > **General**
+2. **Root Directory** : clique **Edit**, coche "Override", mets **`apps/web`**
+3. **Save**, puis **Deployments** > **Redeploy** (dernier déploiement > ... > Redeploy)
+
+Sans ça, Vercel build à la racine et le déploiement échoue (No Production Deployment).
+
 ## Variables Vercel (WEB)
 - `NEXT_PUBLIC_API_URL=https://<api-domain>/api`
 - `NEXT_PUBLIC_APP_URL=https://<web-domain>`
