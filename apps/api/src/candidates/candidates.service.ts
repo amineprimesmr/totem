@@ -69,6 +69,7 @@ export class CandidatesService {
     status?: CandidateStatus;
     formation?: string;
     assignedToId?: string;
+    promotionId?: string;
     search?: string;
     page?: number;
     pageSize?: number;
@@ -77,6 +78,7 @@ export class CandidatesService {
     if (filters?.status) where.status = filters.status;
     if (filters?.formation) where.formation = filters.formation;
     if (filters?.assignedToId) where.assignedToId = filters.assignedToId;
+    if (filters?.promotionId) where.promotionId = filters.promotionId;
     if (filters?.search) {
       where.OR = [
         { firstName: { contains: filters.search, mode: 'insensitive' } },
@@ -89,6 +91,7 @@ export class CandidatesService {
       include: {
         user: { select: { email: true, name: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
+        promotion: { select: { id: true, name: true, year: true } },
         _count: { select: { matches: true } },
       },
       orderBy: { updatedAt: 'desc' },
@@ -107,6 +110,7 @@ export class CandidatesService {
       include: {
         user: { select: { id: true, email: true, name: true, role: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
+        promotion: { select: { id: true, name: true, year: true, formation: true } },
         matches: {
           include: {
             offer: { include: { company: true } },
@@ -168,6 +172,7 @@ export class CandidatesService {
       coverLetterPath: string;
       status: CandidateStatus;
       assignedToId: string | null;
+      promotionId: string | null;
     }>,
   ) {
     const current = await this.prisma.candidate.findUnique({

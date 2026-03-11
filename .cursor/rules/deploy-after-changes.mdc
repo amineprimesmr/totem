@@ -1,0 +1,17 @@
+---
+description: Deploy automatically after each code change
+alwaysApply: true
+---
+
+# Déploiement automatique après modification
+
+- Après toute modification de code validée (et vérifiée), déclencher le déploiement correspondant.
+- Si la modification concerne le web, déployer sur Vercel en production.
+- Si la modification concerne l'API, redéployer le service Railway concerné.
+- Quand les deux sont touchés, déployer les deux.
+- Toujours confirmer ensuite l'URL en ligne et le statut.
+
+## Exceptions
+
+- Ne pas déployer uniquement si l'utilisateur demande explicitement de ne pas déployer.
+- En cas d'échec de déploiement, corriger puis relancer jusqu'à obtenir un statut stable.

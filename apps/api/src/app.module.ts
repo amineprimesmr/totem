@@ -16,6 +16,8 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { DemoModule } from './demo/demo.module';
 import { HealthController } from './health/health.controller';
 import { MessagesModule } from './messages/messages.module';
+import { OrganisationModule } from './organisation/organisation.module';
+import { SchoolingModule } from './schooling/schooling.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { MessagesModule } from './messages/messages.module';
     DashboardModule,
     NotificationsModule,
     MessagesModule,
+    OrganisationModule,
+    SchoolingModule,
   ],
   controllers: [HealthController],
 })

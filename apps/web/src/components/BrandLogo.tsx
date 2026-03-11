@@ -6,16 +6,16 @@ interface BrandLogoProps {
 
 export function BrandLogo({
   className,
-  width = 130,
-  height = 34,
+  width = 160,
+  height = 44,
 }: BrandLogoProps) {
   return (
     <img
-      src="/assets/logo.png"
+      src="/assets/logo.png?v=20260311-1"
       alt="Totem"
       width={width}
       height={height}
-      className={className ?? 'h-auto w-auto max-h-9'}
+      className={className ?? 'h-auto w-auto max-h-12'}
     />
   );
 }

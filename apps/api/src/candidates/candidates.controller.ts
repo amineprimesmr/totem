@@ -64,6 +64,7 @@ export class CandidatesController {
     @Query('status') status?: string,
     @Query('formation') formation?: string,
     @Query('assignedTo') assignedTo?: string,
+    @Query('promotionId') promotionId?: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -73,6 +74,7 @@ export class CandidatesController {
     if (status) filters.status = status;
     if (formation) filters.formation = formation;
     if (assignedTo) filters.assignedToId = assignedTo;
+    if (promotionId) filters.promotionId = promotionId;
     if (search) filters.search = search;
     filters.page = Math.max(1, Number(page) || 1);
     filters.pageSize = Math.min(100, Math.max(1, Number(pageSize) || 25));

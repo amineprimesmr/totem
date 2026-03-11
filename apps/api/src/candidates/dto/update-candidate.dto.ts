@@ -9,4 +9,9 @@ export class UpdateCandidateDto extends PartialType(CreateCandidateDto) {
   @IsString()
   @IsIn(['REGISTERED', 'SEARCHING', 'IN_PROCESS', 'SIGNED'])
   status?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  promotionId?: string | null;
 }

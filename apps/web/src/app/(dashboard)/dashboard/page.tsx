@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { api } from '@/lib/api';
+import { api, organisationApi, type OrganisationStats } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import toast from 'react-hot-toast';
 
@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [roleKpis, setRoleKpis] = useState<RoleKpis | null>(null);
+  const [orgStats, setOrgStats] = useState<OrganisationStats | null>(null);
   const [funnel, setFunnel] = useState<FunnelStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -67,6 +68,9 @@ export default function DashboardPage() {
       promises.push(api<RoleKpis>('/dashboard/kpis/admission').then(setRoleKpis));
     } else {
       promises.push(api<Kpis>('/dashboard/kpis').then(setKpis));
+    }
+    if (role === 'ADMIN') {
+      promises.push(organisationApi.getStats().then(setOrgStats));
     }
 
     Promise.all(promises)
@@ -197,7 +201,55 @@ export default function DashboardPage() {
           </svg>
           Ouvrir la carte
         </Link>
+        {user?.role === 'ADMIN' && (
+          <Link
+            href="/dashboard/organisation"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+            </svg>
+            Organisation
+          </Link>
+        )}
       </div>
+
+      {user?.role === 'ADMIN' && orgStats && (
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white rounded-[14px] border border-slate-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Organisation</h2>
+            <Link href="/dashboard/organisation" className="text-sm font-medium text-totem-accent hover:underline">
+              Voir tout
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Formations actives</p>
+              <p className="text-xl font-bold text-totem-accent">{orgStats.formationsCount}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Promotions</p>
+              <p className="text-xl font-bold text-totem-accent">{orgStats.promotionsCount}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Conventions signées ce mois</p>
+              <p className="text-xl font-bold text-totem-accent">{orgStats.conventionsSignedThisMonth}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Conventions (brouillon / envoyées)</p>
+              <p className="text-xl font-bold text-slate-700">
+                {(orgStats.conventionsByStatus?.DRAFT ?? 0) + (orgStats.conventionsByStatus?.SENT ?? 0)}
+              </p>
+            </div>
+          </div>
+        </motion.section>
+      )}
 
       {/* Funnel — style Fidelity card */}
       <motion.section

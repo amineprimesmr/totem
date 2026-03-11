@@ -60,6 +60,7 @@ Sur Railway (service API), executer:
 npm run db:generate --workspace @totem/database
 npm run db:push --workspace @totem/database
 ```
+Apres mise a jour du schema (ex. Organisation: Formations, Promotions, Conventions), `db:push` applique les nouvelles tables. Si tu utilises `prisma migrate deploy`, une migration est fournie dans `packages/database/prisma/migrations/`.
 
 ## Verification rapide
 1. `GET https://<api-domain>/api/health`

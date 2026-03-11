@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { authApi } from '@/lib/api';
+import { api, authApi, type AuthUser } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,35 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const restoreIfPossible = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('totem_token') : null;
+      if (!token) {
+        if (!cancelled) setCheckingSession(false);
+        return;
+      }
+
+      try {
+        const me = await api<AuthUser>('/users/me');
+        if (cancelled) return;
+        setAuth(me, token);
+        router.replace('/dashboard');
+      } catch {
+        if (typeof window !== 'undefined') localStorage.removeItem('totem_token');
+      } finally {
+        if (!cancelled) setCheckingSession(false);
+      }
+    };
+
+    restoreIfPossible();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, setAuth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,10 +132,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || checkingSession}
           className="w-full py-3.5 rounded-xl font-semibold text-white bg-totem-accent hover:bg-totem-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_-1px_0_rgba(255,255,255,0.12)_inset,0_2px_4px_rgba(0,0,0,0.15),0_6px_16px_rgba(10,124,66,0.25)] hover:shadow-[0_-1px_0_rgba(255,255,255,0.14)_inset,0_4px_8px_rgba(0,0,0,0.12),0_10px_24px_rgba(10,124,66,0.3)] hover:scale-[0.99] active:scale-[0.98]"
         >
-          {loading ? 'Connexion...' : 'Se connecter'}
+          {checkingSession ? 'Vérification session...' : loading ? 'Connexion...' : 'Se connecter'}
         </button>
       </form>
 

@@ -68,6 +68,190 @@ enum CampaignItemStatus {
   ERROR
 }
 
+enum ConventionStatus {
+  DRAFT
+  SENT
+  SIGNED
+  CANCELLED
+}
+
+enum SessionType {
+  COURSE
+  EXAM
+  WORKSHOP
+  MEETING
+  OTHER
+}
+
+enum AbsenceType {
+  ABSENCE
+  LATE
+  EXCUSED
+}
+
+enum DocumentType {
+  SIFA
+  CERFA
+  CONVENTION
+  CONTRACT
+  BULLETIN
+  OTHER
+}
+
+model Formation {
+  id             String        @id @default(cuid())
+  name           String
+  level          String?       // Bac, Bac+2, Bac+5, etc.
+  contractType   ContractType  @default(APPRENTICESHIP)
+  durationMonths Int?
+  description    String?       @db.Text
+  active         Boolean       @default(true)
+  externalId     String?       @unique // ID Galia pour migration
+  externalSource String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  promotions Promotion[]
+}
+
+model Promotion {
+  id             String    @id @default(cuid())
+  formationId     String
+  formation       Formation @relation(fields: [formationId], references: [id], onDelete: Restrict)
+  name            String    // ex. "Promo 2024", "MBA 2024-2025"
+  year            Int
+  startDate       DateTime?
+  endDate         DateTime?
+  capacity        Int?
+  externalId      String?   @unique // ID Galia pour migration
+  externalSource  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  candidates  Candidate[]
+  conventions Convention[]
+  sessions    Session[]
+
+  @@index([formationId])
+  @@index([year])
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  capacity  Int?
+  building  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id             String      @id @default(cuid())
+  promotionId     String?
+  promotion       Promotion?  @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  roomId          String?
+  room            Room?       @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  title           String
+  description     String?     @db.Text
+  startAt         DateTime
+  endAt           DateTime
+  type            SessionType @default(COURSE)
+  externalId      String?
+  externalSource  String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  absences Absence[]
+  grades   Grade[]
+
+  @@index([promotionId])
+  @@index([roomId])
+  @@index([startAt])
+}
+
+model Absence {
+  id          String      @id @default(cuid())
+  candidateId String
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  date        DateTime
+  type        AbsenceType @default(ABSENCE)
+  justified   Boolean     @default(false)
+  notes       String?     @db.Text
+  externalId  String?
+  externalSource String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([candidateId])
+  @@index([sessionId])
+  @@index([date])
+}
+
+model Grade {
+  id          String   @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     Session?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  subject     String?   // ex. "Marketing", "Comptabilité"
+  value       Float     // note /20 ou /100
+  scale       Float?    @default(20) // barème (20 ou 100)
+  coefficient Float?    @default(1)
+  label       String?   // ex. "Contrôle continu", "Examen final"
+  externalId  String?
+  externalSource String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([candidateId])
+  @@index([sessionId])
+}
+
+model Document {
+  id             String       @id @default(cuid())
+  candidateId    String?
+  candidate      Candidate?   @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  type           DocumentType @default(OTHER)
+  name           String
+  filePath       String       // chemin stockage ou URL
+  mimeType       String?
+  externalId     String?
+  externalSource String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([candidateId])
+  @@index([type])
+}
+
+model Convention {
+  id            String           @id @default(cuid())
+  candidateId   String
+  candidate     Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  offerId      String
+  offer        Offer            @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  companyId    String
+  company      Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  promotionId  String?
+  promotion    Promotion?       @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  status       ConventionStatus @default(DRAFT)
+  signedAt     DateTime?
+  documentPath String?
+  notes        String?          @db.Text
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([candidateId, offerId])
+  @@index([candidateId])
+  @@index([companyId])
+  @@index([promotionId])
+  @@index([status])
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -113,11 +297,20 @@ model Candidate {
   onboardingStep  Int             @default(0) // 0=not started, 1=profil, 2=critères, 3=CV
   externalId      String?         @unique // ex. ID stagiaire Galia pour sync
   externalSource  String?         // ex. 'GALIA'
+  promotionId     String?
+  promotion       Promotion?      @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  matches     Match[]
+  matches      Match[]
   campaignItems MessageCampaignItem[]
+  conventions   Convention[]
+  absences      Absence[]
+  grades        Grade[]
+  documents     Document[]
+
+  @@index([promotionId])
+  @@index([status])
 }
 
 model Company {
@@ -141,8 +334,9 @@ model Company {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  offers      Offer[]
+  offers       Offer[]
   campaignItems MessageCampaignItem[]
+  conventions   Convention[]
 }
 
 model Offer {
@@ -166,8 +360,12 @@ model Offer {
   updatedAt    DateTime     @updatedAt
   closedAt     DateTime?
 
-  matches Match[]
+  matches     Match[]
   campaignItems MessageCampaignItem[]
+  conventions  Convention[]
+
+  @@index([companyId])
+  @@index([status])
 }
 
 model Match {

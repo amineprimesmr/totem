@@ -12,7 +12,7 @@ export default function AuthLayout({
       <div className="sticky top-0 z-[100] bg-black border-b border-white/10">
         <header className="max-w-[1280px] mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           <Link href="/" aria-label="Accueil Totem" className="flex items-center">
-            <BrandLogo width={120} height={32} className="h-auto w-auto max-h-8" />
+            <BrandLogo width={156} height={42} className="h-auto w-auto max-h-10" />
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/" className="text-sm text-white/80 hover:text-white transition-colors">
