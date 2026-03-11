@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -8,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 type Status = 'idle' | 'loading' | 'success' | 'error' | 'choose';
 
-export default function ReponseMatchPage() {
+function ReponseMatchContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const reponse = searchParams.get('reponse'); // oui | non
@@ -116,5 +117,21 @@ export default function ReponseMatchPage() {
         <p className="text-sm text-slate-500">Ce lien a peut-être déjà été utilisé ou a expiré.</p>
       </div>
     </div>
+  );
+}
+
+export default function ReponseMatchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 max-w-md w-full text-center">
+            <p className="text-slate-600">Chargement...</p>
+          </div>
+        </div>
+      }
+    >
+      <ReponseMatchContent />
+    </Suspense>
   );
 }

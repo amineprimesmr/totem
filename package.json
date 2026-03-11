@@ -22,6 +22,7 @@
     "dev:web": "cd apps/web && npm run dev",
     "dev:api:restart": "lsof -ti:4000 | xargs kill -9 2>/dev/null; npm run dev:api",
     "dev:all": "npm run dev:api & npm run dev:web & wait",
+    "go-live:doctor": "npx -y node@20 ./scripts/go-live-doctor.mjs",
     "test:smoke": "npx -y node@20 ./scripts/smoke.mjs",
     "test:smoke:campaigns": "npx -y node@20 ./scripts/smoke-campaigns.mjs",
     "ci": "npm run lint && npm run typecheck && npm run build"
