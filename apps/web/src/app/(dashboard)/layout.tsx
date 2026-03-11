@@ -127,18 +127,24 @@ export default function DashboardLayout({
 
       try {
         setIsRestoringSession(true);
-        const me = await api<AuthUser>('/users/me');
+        // Timeout 12s pour ne pas rester bloqué si l'API ne répond pas (ex. refresh en prod)
+        const me = await Promise.race([
+          api<AuthUser>('/users/me'),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 12000),
+          ),
+        ]);
         if (cancelled) return;
         setAuth(me, token);
       } catch {
-        if (cancelled) return;
-        localStorage.removeItem('totem_token');
-        setAuth(null, null);
-      } finally {
         if (!cancelled) {
-          setIsRestoringSession(false);
-          setHasCheckedAuth(true);
+          localStorage.removeItem('totem_token');
+          setAuth(null, null);
         }
+      } finally {
+        // Toujours terminer l'état de chargement pour ne jamais rester bloqué (ex. effet annulé en React Strict Mode)
+        setIsRestoringSession(false);
+        setHasCheckedAuth(true);
       }
     };
 

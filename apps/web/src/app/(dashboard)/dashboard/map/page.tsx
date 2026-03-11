@@ -138,7 +138,15 @@ export default function MapPage() {
   const [currentCampaign, setCurrentCampaign] = useState<CampaignResponse | null>(null);
 
   useEffect(() => {
-    refreshMapData().finally(() => setLoading(false));
+    const timeoutMs = 15000;
+    Promise.race([
+      refreshMapData(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), timeoutMs),
+      ),
+    ])
+      .catch(() => setData({ candidates: [], companies: [] }))
+      .finally(() => setLoading(false));
   }, []);
 
   async function refreshMapData() {
