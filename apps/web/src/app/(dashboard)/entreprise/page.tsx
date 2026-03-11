@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { LABELS } from '@totem/shared';
+import { LABELS } from '@/lib/labels';
 
 interface Offer {
   id: string;

@@ -10,7 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@totem/shared": "file:../../packages/shared",
     "framer-motion": "^11.11.17",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.19.1",

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
-import { LABELS } from '@totem/shared';
+import { LABELS } from '@/lib/labels';
 import toast from 'react-hot-toast';
 
 interface CandidateDetail {

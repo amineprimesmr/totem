@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { api, downloadExport } from '@/lib/api';
-import { LABELS } from '@totem/shared';
+import { LABELS } from '@/lib/labels';
 
 interface Candidate {
   id: string;
