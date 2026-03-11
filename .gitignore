@@ -1,0 +1,20 @@
+node_modules
+.next
+dist
+.turbo
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage
+.vercel
+
+# Prisma
+packages/database/prisma/migrations/**/migration_lock.toml
+packages/database/dev.db
+packages/database/dev.db-journal
+
+# Uploads
+uploads
+public/uploads

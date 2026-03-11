@@ -1,0 +1,42 @@
+{
+  "name": "totem",
+  "private": true,
+  "packageManager": "npm@10.2.0",
+  "scripts": {
+    "postinstall": "npm run build -w @totem/shared 2>/dev/null || true",
+    "dev": "npm run dev:web",
+    "dev:turbo": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "npm run typecheck",
+    "db:generate": "cp .env packages/database/.env 2>/dev/null || true && cd packages/database && npx -y node@20 ./node_modules/prisma/build/index.js generate",
+    "db:push": "cp .env packages/database/.env 2>/dev/null || true && cd packages/database && npx -y node@20 ./node_modules/prisma/build/index.js db push",
+    "db:migrate": "cp .env packages/database/.env 2>/dev/null || true && cd packages/database && npx -y node@20 ./node_modules/prisma/build/index.js migrate dev",
+    "db:studio": "cp .env packages/database/.env 2>/dev/null || true && cd packages/database && npx -y node@20 ./node_modules/prisma/build/index.js studio",
+    "db:seed": "cp .env packages/database/.env 2>/dev/null || true && cd packages/database && npx -y node@20 ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
+    "db:setup": "npm run db:generate && npm run db:push && npm run db:seed",
+    "setup:all": "bash scripts/setup-and-run.sh",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:api:restart": "lsof -ti:4000 | xargs kill -9 2>/dev/null; npm run dev:api",
+    "dev:all": "npm run dev:api & npm run dev:web & wait",
+    "test:smoke": "npx -y node@20 ./scripts/smoke.mjs",
+    "test:smoke:campaigns": "npx -y node@20 ./scripts/smoke-campaigns.mjs",
+    "ci": "npm run lint && npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}

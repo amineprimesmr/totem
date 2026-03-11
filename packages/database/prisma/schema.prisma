@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  COMMERCIAL
+  ADMISSION
+  CANDIDATE
+  COMPANY
+}
+
+enum CandidateStatus {
+  REGISTERED
+  SEARCHING
+  IN_PROCESS
+  SIGNED
+  ARCHIVED
+}
+
+enum CompanyStatus {
+  PROSPECT
+  PARTNER
+  INACTIVE
+}
+
+enum OfferStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  EXPIRED
+}
+
+enum MatchStatus {
+  PROPOSED
+  VIEWED
+  INTERVIEW_SCHEDULED
+  ACCEPTED
+  REJECTED
+}
+
+enum ContractType {
+  APPRENTICESHIP
+  PROFESSIONAL
+}
+
+enum MessageCampaignDirection {
+  CANDIDATE_TO_COMPANIES
+  COMPANY_TO_CANDIDATES
+}
+
+enum MessageChannel {
+  EMAIL
+  SMS
+}
+
+enum CampaignItemStatus {
+  QUEUED
+  SENT
+  CLICKED
+  YES
+  NO
+  ERROR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      UserRole
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  candidate         Candidate?
+  company           Company?              @relation("CompanyContact")
+  assignedCompaniesAsCommercial Company[] @relation("AssignedCommercial")
+  assignedCandidatesAsAdmission Candidate[]  @relation("AdmissionAssignment")
+  messageCampaigns  MessageCampaign[]
+  auditLogs         AuditLog[]
+  emailLogs         EmailLog[]
+  notifications     Notification[]
+}
+
+model Candidate {
+  id              String          @id @default(cuid())
+  userId          String          @unique
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName       String
+  lastName        String
+  phone           String?
+  formation       String
+  level           String?
+  city            String
+  postalCode      String?
+  latitude        Float?
+  longitude       Float?
+  searchRadiusKm  Int             @default(50)
+  sectors         String[]        @default([])
+  desiredJob      String[]        @default([])
+  contractType    ContractType    @default(APPRENTICESHIP)
+  availableFrom   DateTime?
+  cvPath          String?
+  coverLetterPath String?
+  status          CandidateStatus  @default(REGISTERED)
+  assignedToId    String?
+  assignedTo      User?           @relation("AdmissionAssignment", fields: [assignedToId], references: [id])
+  onboardingStep  Int             @default(0) // 0=not started, 1=profil, 2=critères, 3=CV
+  externalId      String?         @unique // ex. ID stagiaire Galia pour sync
+  externalSource  String?         // ex. 'GALIA'
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  matches     Match[]
+  campaignItems MessageCampaignItem[]
+}
+
+model Company {
+  id             String        @id @default(cuid())
+  name           String
+  sector         String
+  address        String
+  city           String
+  postalCode     String?
+  latitude       Float?
+  longitude      Float?
+  phone          String?
+  logoPath       String?
+  status         CompanyStatus @default(PROSPECT)
+  contactUserId  String?       @unique
+  contactUser    User?         @relation("CompanyContact", fields: [contactUserId], references: [id])
+  assignedToId   String?
+  assignedTo     User?         @relation("AssignedCommercial", fields: [assignedToId], references: [id])
+  externalId     String?       @unique // ex. ID entreprise Galia pour sync
+  externalSource String?       // ex. 'GALIA'
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  offers      Offer[]
+  campaignItems MessageCampaignItem[]
+}
+
+model Offer {
+  id           String       @id @default(cuid())
+  companyId    String
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title        String
+  description  String       @db.Text
+  location     String
+  city         String
+  postalCode   String?
+  latitude     Float?
+  longitude    Float?
+  sector       String
+  jobTitle     String
+  formation    String
+  contractType ContractType @default(APPRENTICESHIP)
+  startDate    DateTime?
+  status       OfferStatus  @default(DRAFT)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  closedAt     DateTime?
+
+  matches Match[]
+  campaignItems MessageCampaignItem[]
+}
+
+model Match {
+  id                   String      @id @default(cuid())
+  candidateId          String
+  candidate            Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  offerId              String
+  offer                Offer       @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  score                Int
+  distanceKm           Float?
+  status               MatchStatus @default(PROPOSED)
+  proposedAt           DateTime?
+  proposedById         String?
+  candidateNotifiedAt  DateTime?   // envoi email "cette offre vous correspond"
+  candidateResponse    String?     // PENDING | YES | NO
+  candidateRespondedAt DateTime?
+  responseToken        String?     @unique // token pour lien email (répondre oui/non)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  interviews Interview[]
+  campaignItems MessageCampaignItem[]
+
+  @@unique([candidateId, offerId])
+  @@index([candidateId])
+  @@index([offerId])
+  @@index([status])
+}
+
+model MessageCampaign {
+  id                String                   @id @default(cuid())
+  name              String
+  direction         MessageCampaignDirection
+  channel           MessageChannel           @default(EMAIL)
+  selectedEntityId  String?                  // candidateId or companyId
+  createdById       String
+  createdBy         User                     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  itemCount         Int                      @default(0)
+  sentCount         Int                      @default(0)
+  yesCount          Int                      @default(0)
+  noCount           Int                      @default(0)
+  errorCount        Int                      @default(0)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  items             MessageCampaignItem[]
+
+  @@index([createdById])
+  @@index([direction, channel])
+  @@index([createdAt])
+}
+
+model MessageCampaignItem {
+  id                String             @id @default(cuid())
+  campaignId        String
+  campaign          MessageCampaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  candidateId       String?
+  candidate         Candidate?         @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  companyId         String?
+  company           Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  offerId           String?
+  offer             Offer?             @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  matchId           String?
+  match             Match?             @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  emailLogId        String?
+  channel           MessageChannel     @default(EMAIL)
+  recipientEmail    String?
+  recipientPhone    String?
+  providerMessageSid String?           @unique
+  providerStatus    String?
+  status            CampaignItemStatus @default(QUEUED)
+  score             Int?
+  distanceKm        Float?
+  responseToken     String?            @unique
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  clickedAt         DateTime?
+  respondedAt       DateTime?
+  errorMessage      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([campaignId, candidateId, offerId])
+  @@index([campaignId, status])
+  @@index([candidateId])
+  @@index([companyId])
+  @@index([offerId])
+  @@index([matchId])
+}
+
+model Interview {
+  id         String   @id @default(cuid())
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  date       DateTime
+  time       String?
+  location   String?
+  meetingUrl String?
+  notes      String?  @db.Text
+  status     String   @default("scheduled")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([matchId])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  subject   String
+  body      String   @db.Text
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs EmailLog[]
+}
+
+model EmailLog {
+  id         String   @id @default(cuid())
+  templateId String?
+  template   EmailTemplate? @relation(fields: [templateId], references: [id])
+  to         String
+  subject    String
+  body       String   @db.Text
+  trigger    String?
+  sentById   String?
+  sentByUser User?    @relation(fields: [sentById], references: [id])
+  entityType String?
+  entityId   String?
+  sentAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String    // info, success, warning, match, interview
+  title     String
+  body      String?   @db.Text
+  link      String?   // ex. /dashboard/candidates/xxx
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([readAt])
+}
+

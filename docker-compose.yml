@@ -1,0 +1,20 @@
+# Lancer PostgreSQL sans rien installer sur la machine :
+#   docker compose up -d
+# Puis à la racine du projet : npm run db:push && npm run db:seed
+# Arrêter : docker compose down
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: totem-db
+    environment:
+      POSTGRES_USER: totem
+      POSTGRES_PASSWORD: totem
+      POSTGRES_DB: totem
+    ports:
+      - "5432:5432"
+    volumes:
+      - totem_pg_data:/var/lib/postgresql/data
+
+volumes:
+  totem_pg_data:
